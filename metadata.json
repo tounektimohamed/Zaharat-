@@ -1,0 +1,6 @@
+{
+  "name": "تطبيق زهرات الكشافة التونسية - إدارة الباقة والتدرج",
+  "description": "تطبيق شامل لقائدة الباقة والزهرات لمتابعة المنهاج، تسجيل الأنشطة، الإثباتات بالصور، شارات الهواية والتدرج الشخصي بوجود تنبيهات فورية وتكامل Firebase.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
