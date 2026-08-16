@@ -1,20 +1,22 @@
 import React, { useState } from 'react';
-import { ZahraUser, StageId } from '../types';
+import { ZahraUser, StageId, BadgeItem } from '../types';
 import { STAGES, DOMAINS, BADGES_LIST, ACTIVITIES_DATABASE } from '../data/curriculumData';
-import { Sparkles, Award, Compass, CheckCircle2, Star, Trophy, Users } from 'lucide-react';
+import { Sparkles, Award, Compass, CheckCircle2, Star, Trophy, Users, X, Info } from 'lucide-react';
 
 interface ProgressionMapProps {
   currentUser?: { type: 'LEADER' } | { type: 'ZAHRA'; zahra: ZahraUser };
   zaharat: ZahraUser[];
   currentZahraId?: string;
   onSelectZahra?: (id: string) => void;
+  onOpenSubmitBadgeReq?: (badgeId: string, reqIndex: number) => void;
 }
 
 export const ProgressionMap: React.FC<ProgressionMapProps> = ({
   currentUser,
   zaharat,
   currentZahraId,
-  onSelectZahra
+  onSelectZahra,
+  onOpenSubmitBadgeReq
 }) => {
   const isZahra = currentUser?.type === 'ZAHRA';
   const zahraUser = isZahra ? currentUser.zahra : null;
@@ -22,6 +24,7 @@ export const ProgressionMap: React.FC<ProgressionMapProps> = ({
   const [leaderInspectedId, setLeaderInspectedId] = useState<string>(
     currentZahraId || (zaharat[0] ? zaharat[0].id : '')
   );
+  const [selectedBadgeForDetails, setSelectedBadgeForDetails] = useState<BadgeItem | null>(null);
 
   const activeZahraId = isZahra 
     ? zahraUser!.id 
@@ -78,7 +81,7 @@ export const ProgressionMap: React.FC<ProgressionMapProps> = ({
             خارطة التدرج والشارات للزهرة
           </h2>
           <p className="text-xs text-blue-100 mt-1 max-w-2xl leading-relaxed font-sans">
-            متابعة دقيقة لإلصاق ملصقات الحيوانات وشارات الهواية عبر القطاعات الستة لخارطة التدرج الشخصي (المنهاج التونسي - الأزرق والأصفر).
+            متابعة دقيقة لإلصاق ملصقات الحيوانات وشارات الهواية عبر المجالات الستة لخارطة التدرج الشخصي التونسية.
           </p>
         </div>
 
@@ -248,14 +251,19 @@ export const ProgressionMap: React.FC<ProgressionMapProps> = ({
 
             {/* Badges Earned Cabinet */}
             <div className="pt-4 border-t border-gray-100 space-y-2">
-              <h4 className="font-bold text-xs text-gray-900 flex items-center space-x-2 space-x-reverse">
-                <Award className="w-4 h-4 text-purple-600" />
-                <span>دولاب شارات الهواية المكتسبة:</span>
-              </h4>
+              <div className="flex items-center justify-between">
+                <h4 className="font-bold text-xs text-gray-900 flex items-center space-x-2 space-x-reverse">
+                  <Award className="w-4 h-4 text-purple-600" />
+                  <span>شارات الهواية المكتسبة للزهرة:</span>
+                </h4>
+                <span className="text-[10px] text-purple-700 font-bold">
+                  {activeZahra.badgesEarned.length} شارات محققة 🏅
+                </span>
+              </div>
 
               {activeZahra.badgesEarned.length === 0 ? (
                 <div className="p-3 bg-gray-50 rounded-2xl text-center text-[11px] text-gray-500">
-                  لم تتلقَ الزهرة أي شارات هواية بعد.
+                  لم تحصل الزهرة على شارات هواية بعد. اضغطي على شارات المنهاج للاطلاع على متطلباتها.
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2">
@@ -263,17 +271,47 @@ export const ProgressionMap: React.FC<ProgressionMapProps> = ({
                     const badgeObj = BADGES_LIST.find(b => b.id === badgeId);
                     if (!badgeObj) return null;
                     return (
-                      <div
+                      <button
                         key={badgeObj.id}
-                        className="p-2 bg-purple-50 rounded-2xl border border-purple-200 text-purple-900 text-xs font-bold flex items-center space-x-1.5 space-x-reverse shadow-2xs"
+                        onClick={() => setSelectedBadgeForDetails(badgeObj)}
+                        className="p-2 bg-purple-50 hover:bg-purple-100 rounded-2xl border border-purple-200 text-purple-900 text-xs font-bold flex items-center space-x-1.5 space-x-reverse shadow-2xs transition-all cursor-pointer"
+                        title="انقري للاطلاع على متطلبات الشارة"
                       >
                         <span className="text-base">{badgeObj.icon}</span>
                         <span>{badgeObj.name}</span>
-                      </div>
+                        <Info className="w-3 h-3 text-purple-500 mr-1 opacity-70" />
+                      </button>
                     );
                   })}
                 </div>
               )}
+
+              {/* All Available Badges Quick Browse */}
+              <div className="pt-3">
+                <div className="text-[11px] font-bold text-gray-500 mb-1.5 flex items-center space-x-1 space-x-reverse">
+                  <span>استعراض كافة شارات الهواية المقررة ({BADGES_LIST.length} شارة):</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {BADGES_LIST.map((b) => {
+                    const isEarned = activeZahra.badgesEarned.includes(b.id);
+                    return (
+                      <button
+                        key={b.id}
+                        onClick={() => setSelectedBadgeForDetails(b)}
+                        className={`text-[10px] font-bold px-2 py-1 rounded-xl border flex items-center space-x-1 space-x-reverse transition-all cursor-pointer ${
+                          isEarned
+                            ? 'bg-purple-100 text-purple-900 border-purple-300 ring-1 ring-purple-400'
+                            : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                        }`}
+                      >
+                        <span>{b.icon}</span>
+                        <span>{b.name}</span>
+                        {isEarned && <span className="text-emerald-600 font-bold">✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
           </div>
@@ -281,6 +319,122 @@ export const ProgressionMap: React.FC<ProgressionMapProps> = ({
         </div>
 
       </div>
+
+      {/* Badge Details & Requirements Modal */}
+      {selectedBadgeForDetails && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-purple-100 overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-4 bg-gradient-to-r from-purple-900 to-indigo-950 text-white flex items-center justify-between">
+              <div className="flex items-center space-x-3 space-x-reverse">
+                <div className="w-11 h-11 rounded-2xl bg-purple-100 text-purple-950 flex items-center justify-center text-2xl shrink-0 shadow-sm border border-purple-300">
+                  {selectedBadgeForDetails.icon}
+                </div>
+                <div>
+                  <h3 className="font-black text-sm text-purple-200">{selectedBadgeForDetails.name}</h3>
+                  <span className="text-[10px] font-bold bg-purple-800 text-purple-200 px-2 py-0.5 rounded-full">
+                    {selectedBadgeForDetails.category}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedBadgeForDetails(null)}
+                className="p-1.5 text-purple-200 hover:text-white cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs font-sans">
+              <div className="p-3 bg-purple-50 rounded-2xl border border-purple-200 text-purple-950 leading-relaxed">
+                <div className="font-bold mb-0.5">وصف الشارة:</div>
+                <p className="text-gray-700">{selectedBadgeForDetails.description}</p>
+              </div>
+
+              <div className="space-y-2">
+                <div className="font-bold text-gray-900 text-xs flex items-center space-x-1.5 space-x-reverse">
+                  <Award className="w-4 h-4 text-amber-600" />
+                  <span>الشروط والمتطلبات الأربعة لاستحقاق الشارة:</span>
+                </div>
+
+                <div className="space-y-2.5 bg-gray-50 p-3 rounded-2xl border border-gray-200">
+                  {selectedBadgeForDetails.requirements.map((req, rIdx) => {
+                    const reqKey = `${selectedBadgeForDetails.id}_req-${rIdx}`;
+                    const isReqDone = activeZahra.completedBadgeRequirements?.includes(reqKey);
+
+                    return (
+                      <div
+                        key={rIdx}
+                        className={`p-2.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-all ${
+                          isReqDone
+                            ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
+                            : 'bg-white border-gray-200 text-gray-800'
+                        }`}
+                      >
+                        <div className="flex items-start space-x-2 space-x-reverse min-w-0">
+                          {isReqDone ? (
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                          ) : (
+                            <div className="w-4 h-4 rounded-full border border-gray-400 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                              {rIdx + 1}
+                            </div>
+                          )}
+                          <span className="leading-relaxed font-semibold text-[11px]">{req}</span>
+                        </div>
+
+                        <div className="shrink-0 flex items-center justify-end">
+                          {isReqDone ? (
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
+                              تم الاجتياز والقبول ✅
+                            </span>
+                          ) : isZahra && onOpenSubmitBadgeReq ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const b = selectedBadgeForDetails;
+                                setSelectedBadgeForDetails(null);
+                                onOpenSubmitBadgeReq(b.id, rIdx);
+                              }}
+                              className="text-[10px] font-bold bg-purple-900 hover:bg-purple-950 text-white px-3 py-1.5 rounded-xl shadow-xs flex items-center space-x-1 space-x-reverse cursor-pointer transition-all active:scale-95"
+                            >
+                              <span>📸 إرسال إثبات المتطلب</span>
+                            </button>
+                          ) : (
+                            <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
+                              بانتظار الإنجاز
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 flex items-center justify-between text-[11px] text-amber-900 font-bold">
+                <span>حالة الشارة للزهرة ({activeZahra.name}):</span>
+                {activeZahra.badgesEarned.includes(selectedBadgeForDetails.id) ? (
+                  <span className="bg-emerald-600 text-white px-2.5 py-1 rounded-xl shadow-xs">
+                    مكتسبة وممنوحة رسميّاً 🏅
+                  </span>
+                ) : (
+                  <span className="bg-gray-200 text-gray-700 px-2.5 py-1 rounded-xl">
+                    قيد الإنجاز والتحضير ⏳
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+              <button
+                onClick={() => setSelectedBadgeForDetails(null)}
+                className="px-5 py-2 bg-purple-900 hover:bg-purple-950 text-white font-bold rounded-xl text-xs cursor-pointer"
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

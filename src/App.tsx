@@ -67,11 +67,13 @@ export default function App() {
   });
   const [inviteCode, setInviteCode] = useState<string | undefined>(undefined);
 
-  // Pre-selected Activity for submission modal
-  const [preSelectedActivity, setPreSelectedActivity] = useState<{
+  // Pre-selected Activity / Badge for submission modal
+  const [preSelectedSubmission, setPreSelectedSubmission] = useState<{
     activityId?: string;
-    stageId: StageId;
-    domainId: DomainId;
+    badgeId?: string;
+    badgeRequirementIndex?: number;
+    stageId?: StageId;
+    domainId?: DomainId;
   } | null>(null);
 
   // Toast Banner State
@@ -176,6 +178,8 @@ export default function App() {
   // 1. Submit Activity Proof (Zahra Scout or Leader on her behalf)
   const handleCreateSubmission = (subData: {
     activityId?: string;
+    badgeId?: string;
+    badgeRequirementIndex?: number;
     activityTitle: string;
     stageId: StageId;
     domainId: DomainId;
@@ -197,6 +201,8 @@ export default function App() {
       zahraName: activeZahra.name,
       patrolId: activeZahra.patrolId,
       activityId: subData.activityId,
+      badgeId: subData.badgeId,
+      badgeRequirementIndex: subData.badgeRequirementIndex,
       activityTitle: subData.activityTitle,
       stageId: subData.stageId,
       domainId: subData.domainId,
@@ -250,7 +256,7 @@ export default function App() {
     if (targetSub) {
       // Find matching activity ID if targetSub.activityId is missing but title matches
       let matchedActivityId = targetSub.activityId;
-      if (!matchedActivityId) {
+      if (!matchedActivityId && !targetSub.badgeId) {
         const foundAct = ACTIVITIES_DATABASE.find(
           a => a.title.trim().toLowerCase() === targetSub.activityTitle.trim().toLowerCase()
         );
@@ -261,22 +267,46 @@ export default function App() {
         }
       }
 
-      // 1. Award points, completed activity, and badges to the Zahra scout in list
+      // Check for badge requirement key
+      const badgeReqKey = (targetSub.badgeId !== undefined && targetSub.badgeRequirementIndex !== undefined)
+        ? `${targetSub.badgeId}_req-${targetSub.badgeRequirementIndex}`
+        : null;
+
+      // 1. Award points, completed activity, badge requirements, and badges to the Zahra scout in list
       setZaharat(prev => prev.map(z => {
         if (z.id === targetSub.zahraId) {
-          const actIdToAdd = matchedActivityId || targetSub.activityId || `custom-act-${targetSub.id}`;
+          const actIdToAdd = matchedActivityId || targetSub.activityId;
           const updatedCompleted = actIdToAdd && !z.completedActivityIds.includes(actIdToAdd)
             ? [...z.completedActivityIds, actIdToAdd]
             : z.completedActivityIds;
 
-          const updatedBadges = badgeId && !z.badgesEarned.includes(badgeId)
-            ? [...z.badgesEarned, badgeId]
-            : z.badgesEarned;
+          // Update badge requirements
+          const currentReqs = z.completedBadgeRequirements || [];
+          const updatedBadgeReqs = (badgeReqKey && !currentReqs.includes(badgeReqKey))
+            ? [...currentReqs, badgeReqKey]
+            : currentReqs;
+
+          // Auto-award badge if all 4 requirements are fulfilled OR leader explicitly awarded badge
+          let updatedBadges = z.badgesEarned;
+          if (badgeId && !updatedBadges.includes(badgeId)) {
+            updatedBadges = [...updatedBadges, badgeId];
+          } else if (targetSub.badgeId && !updatedBadges.includes(targetSub.badgeId)) {
+            // Check if all 4 requirements for this badge are completed
+            const targetBadgeDef = BADGES_LIST.find(b => b.id === targetSub.badgeId);
+            const reqCount = targetBadgeDef?.requirements?.length || 4;
+            const completedCount = Array.from({ length: reqCount }).filter((_, idx) =>
+              updatedBadgeReqs.includes(`${targetSub.badgeId}_req-${idx}`)
+            ).length;
+            if (completedCount >= reqCount) {
+              updatedBadges = [...updatedBadges, targetSub.badgeId];
+            }
+          }
 
           return {
             ...z,
             points: z.points + points,
             completedActivityIds: updatedCompleted,
+            completedBadgeRequirements: updatedBadgeReqs,
             badgesEarned: updatedBadges
           };
         }
@@ -286,13 +316,29 @@ export default function App() {
       // 2. Synchronize currentUser if currently logged in as this Zahra
       setCurrentUser(prevUser => {
         if (prevUser.type === 'ZAHRA' && prevUser.zahra.id === targetSub.zahraId) {
-          const actIdToAdd = matchedActivityId || targetSub.activityId || `custom-act-${targetSub.id}`;
+          const actIdToAdd = matchedActivityId || targetSub.activityId;
           const updatedCompleted = actIdToAdd && !prevUser.zahra.completedActivityIds.includes(actIdToAdd)
             ? [...prevUser.zahra.completedActivityIds, actIdToAdd]
             : prevUser.zahra.completedActivityIds;
-          const updatedBadges = badgeId && !prevUser.zahra.badgesEarned.includes(badgeId)
-            ? [...prevUser.zahra.badgesEarned, badgeId]
-            : prevUser.zahra.badgesEarned;
+
+          const currentReqs = prevUser.zahra.completedBadgeRequirements || [];
+          const updatedBadgeReqs = (badgeReqKey && !currentReqs.includes(badgeReqKey))
+            ? [...currentReqs, badgeReqKey]
+            : currentReqs;
+
+          let updatedBadges = prevUser.zahra.badgesEarned;
+          if (badgeId && !updatedBadges.includes(badgeId)) {
+            updatedBadges = [...updatedBadges, badgeId];
+          } else if (targetSub.badgeId && !updatedBadges.includes(targetSub.badgeId)) {
+            const targetBadgeDef = BADGES_LIST.find(b => b.id === targetSub.badgeId);
+            const reqCount = targetBadgeDef?.requirements?.length || 4;
+            const completedCount = Array.from({ length: reqCount }).filter((_, idx) =>
+              updatedBadgeReqs.includes(`${targetSub.badgeId}_req-${idx}`)
+            ).length;
+            if (completedCount >= reqCount) {
+              updatedBadges = [...updatedBadges, targetSub.badgeId];
+            }
+          }
 
           return {
             type: 'ZAHRA',
@@ -300,6 +346,7 @@ export default function App() {
               ...prevUser.zahra,
               points: prevUser.zahra.points + points,
               completedActivityIds: updatedCompleted,
+              completedBadgeRequirements: updatedBadgeReqs,
               badgesEarned: updatedBadges
             }
           };
@@ -487,7 +534,6 @@ export default function App() {
               zaharat={filteredZaharat}
               submissions={filteredSubmissions}
               onOpenAssignTask={() => setIsAssignTaskModalOpen(true)}
-              onOpenSubmitProof={() => setIsSubmitModalOpen(true)}
               onSelectSubmission={(subId) => {
                 setActiveTab('submissions');
               }}
@@ -501,7 +547,7 @@ export default function App() {
               submissions={submissions}
               tasks={tasks}
               onOpenSubmitProof={(pre) => {
-                if (pre) setPreSelectedActivity(pre);
+                if (pre) setPreSelectedSubmission(pre);
                 setIsSubmitModalOpen(true);
               }}
               onNavigateTab={setActiveTab}
@@ -515,7 +561,7 @@ export default function App() {
             currentUser={currentUser}
             submissions={submissions}
             onOpenSubmitProofWithActivity={(actId, stageId, domId) => {
-              setPreSelectedActivity({ activityId: actId, stageId, domainId: domId });
+              setPreSelectedSubmission({ activityId: actId, stageId, domainId: domId });
               setIsSubmitModalOpen(true);
             }}
           />
@@ -553,6 +599,10 @@ export default function App() {
             currentUser={currentUser}
             zaharat={filteredZaharat}
             currentZahraId={currentUser.type === 'ZAHRA' ? currentUser.zahra.id : undefined}
+            onOpenSubmitBadgeReq={(badgeId, reqIdx) => {
+              setPreSelectedSubmission({ badgeId, badgeRequirementIndex: reqIdx });
+              setIsSubmitModalOpen(true);
+            }}
           />
         )}
 
@@ -599,13 +649,13 @@ export default function App() {
       {currentUser.type === 'ZAHRA' && (
         <button
           onClick={() => {
-            setPreSelectedActivity(null);
+            setPreSelectedSubmission(null);
             setIsSubmitModalOpen(true);
           }}
           className="fixed bottom-6 left-6 z-40 bg-amber-400 hover:bg-amber-300 text-blue-950 font-black px-5 py-3.5 rounded-full shadow-2xl border-2 border-white flex items-center space-x-2 space-x-reverse text-xs transition-all active:scale-95 animate-bounce cursor-pointer"
         >
           <span className="text-base">📸</span>
-          <span>إرسال إثبات نشاط مصور (Base64)</span>
+          <span>إرسال إثبات نشاط مصور</span>
         </button>
       )}
 
@@ -616,7 +666,7 @@ export default function App() {
             تطبيق زهرات الكشافة التونسية • منظومة التدرج الشخصي وإدارة الباقة
           </div>
           <p className="text-[11px] text-blue-400 font-sans">
-            قسم الزهرات (الأزرق والأصفر) • الكشافة التونسية.
+            قسم الزهرات • الكشافة التونسية.
           </p>
         </div>
       </footer>
@@ -651,14 +701,17 @@ export default function App() {
         onClose={() => setIsHandbookOpen(false)}
       />
 
-      {/* Submit Activity Proof Modal */}
+      {/* Submit Activity / Badge Proof Modal */}
       <ActivitySubmissionModal
         isOpen={isSubmitModalOpen}
         onClose={() => {
           setIsSubmitModalOpen(false);
-          setPreSelectedActivity(null);
+          setPreSelectedSubmission(null);
         }}
         currentUser={currentUser.type === 'ZAHRA' ? currentUser.zahra : (filteredZaharat[0] || zaharat[0])}
+        initialBadgeId={preSelectedSubmission?.badgeId}
+        initialBadgeReqIndex={preSelectedSubmission?.badgeRequirementIndex}
+        initialActivityId={preSelectedSubmission?.activityId}
         onSubmit={handleCreateSubmission}
       />
 

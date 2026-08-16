@@ -58,7 +58,7 @@ export const CurriculumCatalog: React.FC<CurriculumCatalogProps> = ({
             منهاج الأنشطة والتدرج الشخصي
           </h2>
           <p className="text-xs text-blue-100 mt-1 max-w-2xl leading-relaxed font-sans">
-            قائمة الأنشطة الشاملة المقررة لجميع المراحل: الإكليل اليافع (القبول والوعد)، الإكليل النضر، الإكليل العطر، والإكليل المثمر، مقسمة حسب المجالات التربوية الستة ورفقاء الأدغال (قسم الزهرات - الأزرق والأصفر).
+            قائمة الأنشطة الشاملة المقررة لجميع المراحل: الإكليل اليافع (القبول والوعد)، الإكليل النضر، الإكليل العطر، والإكليل المثمر، مقسمة حسب المجالات التربوية الستة ورفقاء الأدغال.
           </p>
         </div>
 
@@ -213,14 +213,18 @@ export const CurriculumCatalog: React.FC<CurriculumCatalogProps> = ({
                     <Clock className="w-4 h-4 text-amber-600 animate-spin" />
                     <span>قيد تقييم القائدة...</span>
                   </div>
-                ) : (
+                ) : isZahra ? (
                   <button
                     onClick={() => onOpenSubmitProofWithActivity(act.id, act.stageId, act.domainId)}
                     className="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold py-2 px-3 rounded-xl text-xs shadow-xs flex items-center justify-center space-x-1.5 space-x-reverse transition-all active:scale-95 cursor-pointer"
                   >
                     <Send className="w-3.5 h-3.5 text-amber-300" />
-                    <span>إرسال إثبات النشاط (Base64)</span>
+                    <span>إرسال إثبات النشاط</span>
                   </button>
+                ) : (
+                  <div className="text-[11px] font-bold text-gray-500 bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200">
+                    نشاط متاح للزهرات للإنجاز والإرسال ⚜️
+                  </div>
                 )}
 
               </div>

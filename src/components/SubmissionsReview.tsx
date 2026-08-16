@@ -53,9 +53,9 @@ export const SubmissionsReview: React.FC<SubmissionsReviewProps> = ({
 
   const handleOpenReview = (sub: Submission) => {
     setReviewingSub(sub);
-    setPointsToAward(50);
-    setBadgeToAward('');
-    setLeaderFeedback('');
+    setPointsToAward(sub.pointsAwarded || (sub.badgeId ? 25 : 50));
+    setBadgeToAward(sub.badgeAwarded || sub.badgeId || '');
+    setLeaderFeedback(sub.leaderFeedback || '');
     setReviewAction(null);
   };
 
@@ -89,7 +89,7 @@ export const SubmissionsReview: React.FC<SubmissionsReviewProps> = ({
         <div>
           <div className="flex items-center space-x-2 space-x-reverse">
             <span className="bg-amber-400 text-blue-950 font-black text-xs px-2.5 py-0.5 rounded-full">
-              صندوق التقييم والإثباتات المصورة (Base64)
+              صندوق التقييم والمتابعة التربوية
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-amber-300 mt-1">
@@ -209,12 +209,12 @@ export const SubmissionsReview: React.FC<SubmissionsReviewProps> = ({
                     </p>
                   </div>
 
-                  {/* Proof Attachment Base64 */}
+                  {/* Proof Attachment */}
                   {sub.proofBase64 && (
                     <div className="space-y-1">
                       <div className="text-[10px] font-bold text-gray-500 flex items-center space-x-1 space-x-reverse">
                         <ImageIcon className="w-3.5 h-3.5 text-blue-600" />
-                        <span>الملف / الصورة المرفقة كإثبات (Base64):</span>
+                        <span>الملف / الصورة المرفقة كإثبات للإنجاز:</span>
                       </div>
                       <div className="relative group overflow-hidden rounded-2xl border border-gray-200 bg-gray-100">
                         <img

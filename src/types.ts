@@ -46,6 +46,7 @@ export interface BadgeItem {
   category: string;
   icon: string;
   description: string;
+  requirements: string[];
 }
 
 export type PatrolColor = 
@@ -96,6 +97,7 @@ export interface ZahraUser {
   points: number;
   badgesEarned: string[]; // Badge IDs
   completedActivityIds: string[]; // Activity IDs
+  completedBadgeRequirements?: string[]; // e.g. "badge-1_req-0", "badge-1_req-1"
   birthDate?: string;
   parentPhone?: string;
   pin?: string; // Secret login PIN
@@ -109,6 +111,8 @@ export interface Submission {
   zahraName: string;
   patrolId: string;
   activityId?: string;
+  badgeId?: string;
+  badgeRequirementIndex?: number;
   activityTitle: string;
   stageId: StageId;
   domainId: DomainId;

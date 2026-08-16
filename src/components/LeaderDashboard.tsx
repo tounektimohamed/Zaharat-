@@ -22,7 +22,6 @@ interface LeaderDashboardProps {
   zaharat: ZahraUser[];
   submissions: Submission[];
   onOpenAssignTask: () => void;
-  onOpenSubmitProof: () => void;
   onSelectSubmission: (subId: string) => void;
   onNavigateTab: (tab: string) => void;
   onQuickApprove: (subId: string) => void;
@@ -34,7 +33,6 @@ export const LeaderDashboard: React.FC<LeaderDashboardProps> = ({
   zaharat,
   submissions,
   onOpenAssignTask,
-  onOpenSubmitProof,
   onSelectSubmission,
   onNavigateTab,
   onQuickApprove,
@@ -71,7 +69,7 @@ export const LeaderDashboard: React.FC<LeaderDashboardProps> = ({
                 مرحباً بكِ، القائدة {leaderName}
               </h2>
               <p className="text-xs text-blue-100 mt-1 max-w-xl leading-relaxed font-sans">
-                مرحباً بكِ في منظومة قيادة الفرقة والباقة. يمكنكِ متابعة التدرج الشخصي لكل زهرة، تقييم الأنشطة المحملة بالإثباتات المصورة (Base64)، وإدارة السداسيات وفق منهاج الزهرات التونسي (الأزرق والأصفر).
+                مرحباً بكِ في منظومة قيادة الفرقة والباقة. يمكنكِ متابعة التدرج الشخصي لكل زهرة، تقييم الأنشطة المحملة بالإثباتات، وإدارة السداسيات وفق منهاج الزهرات التونسي.
               </p>
             </div>
           </div>

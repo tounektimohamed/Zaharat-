@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { SCOUT_LAW, SCOUT_PROMISE, JUNGLE_VOICE, JUNGLE_STORY, DOMAINS, STAGES } from '../data/curriculumData';
-import { X, BookOpen, Compass, Shield, Award, Heart, Sparkles, Feather } from 'lucide-react';
+import { SCOUT_LAW, SCOUT_PROMISE, JUNGLE_VOICE, JUNGLE_STORY, DOMAINS, STAGES, BADGES_LIST } from '../data/curriculumData';
+import { X, BookOpen, Compass, Shield, Award, Heart, Sparkles, Feather, CheckCircle2 } from 'lucide-react';
 
 interface HandbookGuideModalProps {
   isOpen: boolean;
@@ -10,7 +10,7 @@ interface HandbookGuideModalProps {
 export const HandbookGuideModal: React.FC<HandbookGuideModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
-  const [activeSection, setActiveSection] = useState<'promise' | 'story' | 'domains' | 'stages'>('promise');
+  const [activeSection, setActiveSection] = useState<'promise' | 'story' | 'domains' | 'stages' | 'badges'>('promise');
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
@@ -24,7 +24,7 @@ export const HandbookGuideModal: React.FC<HandbookGuideModalProps> = ({ isOpen, 
             </div>
             <div>
               <h3 className="font-bold text-base text-amber-300">دليل قائدة الباقة - الكشافة التونسية</h3>
-              <p className="text-xs text-blue-200">القسم المكتمل للمنهاج والإطار الرمزي (الأزرق والأصفر)</p>
+              <p className="text-xs text-blue-200">المنهاج التربوي والإطار الرمزي لقسم الزهرات</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 text-blue-200 hover:text-white cursor-pointer">
@@ -68,6 +68,15 @@ export const HandbookGuideModal: React.FC<HandbookGuideModalProps> = ({ isOpen, 
             }`}
           >
             مراحل وساعات التدرج ⏳
+          </button>
+
+          <button
+            onClick={() => setActiveSection('badges')}
+            className={`px-4 py-2 rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+              activeSection === 'badges' ? 'bg-amber-400 text-blue-950 font-black shadow-xs' : 'hover:bg-blue-800'
+            }`}
+          >
+            شارات الهواية ومتطلباتها 🏅
           </button>
         </div>
 
@@ -194,6 +203,59 @@ export const HandbookGuideModal: React.FC<HandbookGuideModalProps> = ({ isOpen, 
                     <div className="flex items-center space-x-4 space-x-reverse text-[11px] font-bold text-blue-900 pt-1">
                       <span>الأنشطة المقررة: {stage.requirementsCount} نشاطاً</span>
                       <span>• شارات الهواية المطلوبة: {stage.badgesRequired} شارات</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Section 5: Badges & Requirements */}
+          {activeSection === 'badges' && (
+            <div className="space-y-4 animate-in fade-in">
+              <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200">
+                <div className="font-black text-xs text-amber-950">دليل شارات الهواية الكشفية ومتطلبات الاستحقاق:</div>
+                <p className="text-[11px] text-amber-900 mt-0.5 font-sans leading-relaxed">
+                  تمنح القائدة شارة الهواية للزهرة بعد إنجاز الشروط الأربعة الخاصة بكل شارة وتوثيقها، لترصيع سترة الزهرة ودولاب إنجازاتها الكشفية.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                {BADGES_LIST.map((badge) => (
+                  <div
+                    key={badge.id}
+                    className="p-4 rounded-2xl border border-gray-200 bg-white shadow-2xs space-y-2.5 flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center space-x-2.5 space-x-reverse">
+                        <div className="w-10 h-10 rounded-xl bg-purple-100 border border-purple-200 flex items-center justify-center text-xl shrink-0">
+                          {badge.icon}
+                        </div>
+                        <div>
+                          <div className="font-black text-xs text-gray-900">{badge.name}</div>
+                          <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full">
+                            {badge.category}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-gray-600 font-sans mt-2 leading-relaxed">
+                        {badge.description}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-gray-100 space-y-1.5 bg-gray-50/60 p-2.5 rounded-xl">
+                      <div className="font-bold text-[11px] text-blue-950 flex items-center space-x-1.5 space-x-reverse">
+                        <Award className="w-3.5 h-3.5 text-amber-600" />
+                        <span>متطلبات وشروط الحصول على الشارة:</span>
+                      </div>
+                      <ul className="space-y-1">
+                        {badge.requirements.map((req, rIdx) => (
+                          <li key={rIdx} className="text-[10px] text-gray-700 flex items-start space-x-1.5 space-x-reverse font-sans">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0 mt-0.5" />
+                            <span>{req}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
                 ))}

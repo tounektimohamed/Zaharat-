@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ZahraUser, LeaderUser, Role } from '../types';
 import { 
   Award, 
@@ -14,7 +14,8 @@ import {
   Clock,
   ChevronDown,
   LogOut,
-  UserPlus
+  UserPlus,
+  X
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -43,6 +44,23 @@ export const Header: React.FC<HeaderProps> = ({
   setActiveTab
 }) => {
   const [showSwitchMenu, setShowSwitchMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowSwitchMenu(false);
+      }
+    };
+
+    if (showSwitchMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSwitchMenu]);
 
   const isLeader = currentUser.type === 'LEADER';
   const currentLeader = isLeader ? (currentUser as { type: 'LEADER'; leader?: LeaderUser }).leader : null;
@@ -68,7 +86,7 @@ export const Header: React.FC<HeaderProps> = ({
                   تطبيق زهرات الكشافة التونسية
                 </h1>
                 <span className="bg-blue-900 text-amber-300 text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full border border-blue-700 font-bold">
-                  قسم الزهرات • الأزرق والأصفر
+                  قسم الزهرات
                 </span>
               </div>
               <p className="text-[11px] sm:text-xs text-blue-200 mt-0.5">
@@ -105,121 +123,139 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             {/* Role / User Switcher Dropdown */}
-            <div className="relative">
+            <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setShowSwitchMenu(!showSwitchMenu)}
-                className="flex items-center space-x-2 space-x-reverse bg-blue-900 hover:bg-blue-800 text-white px-2.5 sm:px-3 py-1.5 rounded-xl border border-blue-700 text-xs shadow transition-all cursor-pointer"
+                className="flex items-center space-x-2 space-x-reverse bg-blue-900 hover:bg-blue-800 text-white px-2.5 sm:px-3 py-1.5 rounded-xl border border-blue-700 text-xs shadow transition-all active:scale-95 cursor-pointer"
+                aria-expanded={showSwitchMenu}
               >
                 <div className="w-7 h-7 rounded-full bg-amber-400 text-blue-950 font-black flex items-center justify-center text-xs shrink-0 border border-amber-300">
                   {isLeader ? '👑' : '🌸'}
                 </div>
-                <div className="text-right hidden sm:block">
-                  <div className="font-black text-amber-300">
+                <div className="text-right max-w-[110px] sm:max-w-[150px] truncate">
+                  <div className="font-black text-amber-300 text-xs truncate">
                     {isLeader ? leaderDisplayName : currentZahra?.name}
                   </div>
-                  <div className="text-[10px] text-blue-200">
+                  <div className="text-[10px] text-blue-200 truncate hidden xs:block sm:block">
                     {isLeader ? (currentLeader ? currentLeader.troopName : 'قائدة الفرقة') : `زهرة - ${currentZahra?.patrolRole || 'سداسي'}`}
                   </div>
                 </div>
-                <ChevronDown className="w-3.5 h-3.5 text-blue-200" />
+                <ChevronDown className={`w-3.5 h-3.5 text-blue-200 transition-transform duration-200 ${showSwitchMenu ? 'rotate-180' : ''}`} />
               </button>
 
-              {/* Account Profile Menu */}
+              {/* Account Profile Menu (Responsive: Floating on desktop, Popover / Modal on Mobile) */}
               {showSwitchMenu && (
-                <div className="absolute left-0 mt-2 w-72 bg-white text-gray-800 rounded-2xl shadow-2xl border border-blue-100 py-3 z-50 animate-in fade-in slide-in-from-top-2">
-                  <div className="px-4 py-2 text-[11px] font-bold text-blue-900 bg-blue-50 mb-2 border-y border-blue-100 flex items-center justify-between">
-                    <span>بيانات الحساب المسجل:</span>
-                    <span className="bg-amber-300 text-blue-950 text-[10px] px-2 py-0.5 rounded-full font-black">
-                      {isLeader ? 'حساب قائدة فرقة 👑' : 'حساب زهرة 🌸'}
-                    </span>
-                  </div>
+                <>
+                  {/* Backdrop for Mobile */}
+                  <div 
+                    className="fixed inset-0 bg-black/40 z-40 sm:hidden backdrop-blur-xs"
+                    onClick={() => setShowSwitchMenu(false)}
+                  />
 
-                  {/* Logged in User Card */}
-                  {isLeader ? (
-                    <div className="px-4 py-2 space-y-2">
-                      <div className="flex items-center space-x-3 space-x-reverse">
-                        <div className="w-10 h-10 rounded-xl bg-amber-400 text-blue-950 font-black text-lg flex items-center justify-center shrink-0 shadow-sm border border-amber-300">
-                          👑
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-black text-sm text-blue-950 truncate">{leaderDisplayName}</div>
-                          <div className="text-xs text-gray-500 font-semibold">{leaderTroopName}</div>
-                          {currentLeader?.email && (
-                            <div className="text-[10px] text-gray-400 font-mono truncate">{currentLeader.email}</div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Invite Code Quick Copy */}
-                      {currentLeader?.inviteCode && (
-                        <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-xs flex items-center justify-between">
-                          <div>
-                            <span className="text-[10px] text-amber-800 font-bold block">رمز دعوة فرقتكِ:</span>
-                            <code className="font-mono font-bold text-blue-950">{currentLeader.inviteCode}</code>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              navigator.clipboard.writeText(currentLeader.inviteCode);
-                              alert(`تم نسخ كود دعوة الفرقة: ${currentLeader.inviteCode}`);
-                            }}
-                            className="px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-blue-950 text-[11px] font-black rounded-lg shadow-xs cursor-pointer"
-                          >
-                            نسخ 📋
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="px-4 py-2 space-y-1.5">
-                      <div className="flex items-center space-x-3 space-x-reverse">
-                        <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-900 font-black text-lg flex items-center justify-center shrink-0 border border-blue-300">
-                          🌸
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-black text-sm text-gray-900 truncate">{currentZahra?.name}</div>
-                          <div className="text-xs text-blue-700 font-bold">{currentZahra?.troopName || 'فرقة الزهرات'}</div>
-                          <div className="text-[11px] text-gray-500">
-                            {currentZahra?.patrolRole || 'زهرة'} • {currentZahra?.points || 0} نقطة ⭐️
-                          </div>
-                        </div>
+                  <div className="fixed sm:absolute top-16 left-3 right-3 sm:top-auto sm:left-0 sm:right-auto sm:mt-2 w-auto sm:w-80 max-w-sm sm:max-w-none mx-auto sm:mx-0 bg-white text-gray-800 rounded-3xl sm:rounded-2xl shadow-2xl border border-blue-200 py-3 z-50 animate-in fade-in slide-in-from-top-2">
+                    
+                    <div className="px-4 py-2 text-[11px] font-bold text-blue-900 bg-blue-50 mb-2 border-y border-blue-100 flex items-center justify-between">
+                      <span className="font-black">بيانات الحساب:</span>
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <span className="bg-amber-300 text-blue-950 text-[10px] px-2 py-0.5 rounded-full font-black">
+                          {isLeader ? 'حساب قائدة فرقة 👑' : 'حساب زهرة 🌸'}
+                        </span>
+                        <button 
+                          onClick={() => setShowSwitchMenu(false)}
+                          className="sm:hidden text-gray-400 hover:text-gray-700 p-1"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
-                  )}
 
-                  <div className="border-t border-gray-100 my-2"></div>
+                    {/* Logged in User Card */}
+                    {isLeader ? (
+                      <div className="px-4 py-2 space-y-2.5">
+                        <div className="flex items-center space-x-3 space-x-reverse">
+                          <div className="w-11 h-11 rounded-2xl bg-amber-400 text-blue-950 font-black text-xl flex items-center justify-center shrink-0 shadow-sm border border-amber-300">
+                            👑
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-black text-sm text-blue-950 truncate">{leaderDisplayName}</div>
+                            <div className="text-xs text-gray-600 font-bold">{leaderTroopName}</div>
+                            {currentLeader?.email && (
+                              <div className="text-[10px] text-gray-400 font-mono truncate">{currentLeader.email}</div>
+                            )}
+                          </div>
+                        </div>
 
-                  {/* Leader Actions */}
-                  {isLeader && (
-                    <>
+                        {/* Invite Code Quick Copy */}
+                        {currentLeader?.inviteCode && (
+                          <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-xs flex items-center justify-between">
+                            <div>
+                              <span className="text-[10px] text-amber-800 font-bold block">رمز دعوة فرقتكِ:</span>
+                              <code className="font-mono font-bold text-blue-950">{currentLeader.inviteCode}</code>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(currentLeader.inviteCode);
+                                alert(`تم نسخ كود دعوة الفرقة: ${currentLeader.inviteCode}`);
+                              }}
+                              className="px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-blue-950 text-[11px] font-black rounded-lg shadow-xs cursor-pointer"
+                            >
+                              نسخ 📋
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="px-4 py-2 space-y-1.5">
+                        <div className="flex items-center space-x-3 space-x-reverse">
+                          <div className="w-11 h-11 rounded-2xl bg-blue-100 text-blue-900 font-black text-xl flex items-center justify-center shrink-0 border border-blue-300">
+                            🌸
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-black text-sm text-gray-900 truncate">{currentZahra?.name}</div>
+                            <div className="text-xs text-blue-700 font-bold">{currentZahra?.troopName || 'فرقة الزهرات'}</div>
+                            <div className="text-[11px] text-gray-600 font-semibold">
+                              {currentZahra?.patrolRole || 'زهرة'} • {currentZahra?.points || 0} نقطة ⭐️
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="border-t border-gray-100 my-2"></div>
+
+                    {/* Leader Actions */}
+                    {isLeader && (
+                      <>
+                        <button
+                          onClick={() => {
+                            onOpenAuthModal();
+                            setShowSwitchMenu(false);
+                          }}
+                          className="w-full text-right px-4 py-2.5 text-xs font-bold text-blue-900 bg-blue-50/60 hover:bg-blue-100 flex items-center space-x-2 space-x-reverse transition-colors cursor-pointer"
+                        >
+                          <UserPlus className="w-4 h-4 text-blue-700 shrink-0" />
+                          <span>تسجيل قائدة جديدة أو زهرة في الفرقة</span>
+                        </button>
+                        <div className="border-t border-gray-100 my-2"></div>
+                      </>
+                    )}
+
+                    {/* Logout Button */}
+                    <div className="px-3 pt-1">
                       <button
                         onClick={() => {
-                          onOpenAuthModal();
+                          onLogout();
                           setShowSwitchMenu(false);
                         }}
-                        className="w-full text-right px-4 py-2.5 text-xs font-bold text-blue-900 bg-blue-50/60 hover:bg-blue-100 flex items-center space-x-2 space-x-reverse transition-colors cursor-pointer"
+                        className="w-full text-center px-4 py-2.5 text-xs font-black text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl border border-rose-200 flex items-center justify-center space-x-2 space-x-reverse transition-all active:scale-98 shadow-xs cursor-pointer"
                       >
-                        <UserPlus className="w-4 h-4 text-blue-700 shrink-0" />
-                        <span>تسجيل قائدة جديدة أو زهرة في الفرقة</span>
+                        <LogOut className="w-4 h-4 text-rose-600 shrink-0" />
+                        <span>تسجيل الخروج والعودة لصفحة الدخول 🚪</span>
                       </button>
-                      <div className="border-t border-gray-100 my-2"></div>
-                    </>
-                  )}
-
-                  {/* Logout Button */}
-                  <div className="px-3">
-                    <button
-                      onClick={() => {
-                        onLogout();
-                        setShowSwitchMenu(false);
-                      }}
-                      className="w-full text-center px-4 py-2.5 text-xs font-black text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl border border-rose-200 flex items-center justify-center space-x-2 space-x-reverse transition-all active:scale-98 shadow-xs cursor-pointer"
-                    >
-                      <LogOut className="w-4 h-4 text-rose-600" />
-                      <span>تسجيل الخروج والعودة لصفحة الدخول 🚪</span>
-                    </button>
+                    </div>
                   </div>
-                </div>
+                </>
               )}
             </div>
 
