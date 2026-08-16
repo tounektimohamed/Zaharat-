@@ -2,8 +2,14 @@ services:
   - type: web
     name: zaharat-scout-app
     runtime: static
+    plan: free
     buildCommand: npm run build
     staticPublishPath: ./dist
+    pullRequestPreviewsEnabled: false
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
     routes:
       - type: rewrite
         source: /*
